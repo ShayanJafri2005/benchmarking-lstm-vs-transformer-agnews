@@ -17,9 +17,14 @@ class LSTMClassifier(nn.Module):
         self.fc      = nn.Linear(hidden_dim * 2, num_classes)
 
     def forward(self, x):
-        embedded       = self.dropout(self.embedding(x))
-        _, (hidden, _) = self.lstm(embedded)
-        fwd = hidden[-2, :, :]
-        bwd = hidden[-1, :, :]
-        out = self.dropout(torch.cat((fwd, bwd), dim=1))
+        embedded = self.dropout(self.embedding(x))
+        output, (hidden, _) = self.lstm(embedded)
+
+        # last layer forward + backward
+        fwd = hidden[-2]
+        bwd = hidden[-1]
+
+        out = torch.cat((fwd, bwd), dim=1)
+        out = self.dropout(out)
+
         return self.fc(out)
