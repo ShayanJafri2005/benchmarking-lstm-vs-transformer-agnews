@@ -22,12 +22,6 @@ env/
 *.pt
 *.pth
 
-# Outputs
-outputs/*.png
-outputs/*.jpg
-outputs/*.jpeg
-outputs/*.json
-outputs/*.csv
 
 # Logs
 *.log
