@@ -1,0 +1,45 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Models
+*.pt
+*.pth
+
+# Outputs
+outputs/*.png
+outputs/*.jpg
+outputs/*.jpeg
+outputs/*.json
+outputs/*.csv
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# PyTorch Lightning
+lightning_logs/
+
+# Build files
+build/
+dist/
+*.egg-info/
