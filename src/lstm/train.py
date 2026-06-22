@@ -1,25 +1,46 @@
 import torch
 import torch.nn as nn
+from torch.optim import Adam
+from torch.optim.lr_scheduler import StepLR
+from tqdm import tqdm
 
-class LSTMClassifier(nn.Module):
-    def __init__(self, vocab_size, embed_dim=128, hidden_dim=256,
-                 num_layers=2, num_classes=4, dropout=0.5):
-        super().__init__()
-        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
-        self.lstm = nn.LSTM(
-            input_size=embed_dim,
-            hidden_size=hidden_dim,
-            num_layers=num_layers,
-            batch_first=True,
-            bidirectional=True,
-            dropout=dropout if num_layers > 1 else 0)
-        self.dropout = nn.Dropout(dropout)
-        self.fc      = nn.Linear(hidden_dim * 2, num_classes)
+def train_model(model, train_loader, test_loader,
+                device, epochs=5, lr=0.001):
+    criterion = nn.CrossEntropyLoss()
+    optimizer = Adam(model.parameters(), lr=lr)
+    scheduler = StepLR(optimizer, step_size=2, gamma=0.5)
+    results   = {"train_loss":[], "train_accuracy":[], "val_accuracy":[]}
 
-    def forward(self, x):
-        embedded       = self.dropout(self.embedding(x))
-        _, (hidden, _) = self.lstm(embedded)
-        fwd = hidden[-2, :, :]
-        bwd = hidden[-1, :, :]
-        out = self.dropout(torch.cat((fwd, bwd), dim=1))
-        return self.fc(out)
+    for epoch in range(epochs):
+        model.train()
+        total_loss, correct, total = 0, 0, 0
+        loop = tqdm(train_loader, desc=f"[LSTM] Epoch {epoch+1}/{epochs}")
+        for inputs, labels in loop:
+            inputs, labels = inputs.to(device), labels.to(device)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss    = criterion(outputs, labels)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            optimizer.step()
+            total_loss += loss.item()
+            correct    += (torch.argmax(outputs,1)==labels).sum().item()
+            total      += labels.size(0)
+            loop.set_postfix(loss=f"{loss.item():.4f}")
+        scheduler.step()
+
+        model.eval()
+        vc, vt = 0, 0
+        with torch.no_grad():
+            for inp, lbl in test_loader:
+                inp, lbl = inp.to(device), lbl.to(device)
+                vc += (torch.argmax(model(inp),1)==lbl).sum().item()
+                vt += lbl.size(0)
+        val_acc = vc/vt
+
+        results["train_loss"].append(total_loss/len(train_loader))
+        results["train_accuracy"].append(correct/total)
+        results["val_accuracy"].append(val_acc)
+        print(f"Epoch {epoch+1} | Loss: {total_loss/len(train_loader):.4f} "
+              f"| Train: {correct/total:.4f} | Val: {val_acc:.4f}")
+    return results
