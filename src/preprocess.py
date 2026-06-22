@@ -38,7 +38,7 @@ def build_vocab(texts, max_vocab=20000):
 
 
 def load_agnews(batch_size=64, max_len=128):
-    dataset = load_dataset("ag_news")
+    dataset = load_dataset("fancyzhx/ag_news")
     train_texts = dataset["train"]["text"]
     train_labels = dataset["train"]["label"]
     test_texts  = dataset["test"]["text"]
